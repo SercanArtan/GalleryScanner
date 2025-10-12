@@ -79,8 +79,8 @@ final class PhotoScanner: NSObject, PHPhotoLibraryChangeObserver {
                     
                     
                 }
-                // Clean all data
-                try? PersistenceManager.shared.clearScanState()
+                // Clean all data for testing
+                //try? PersistenceManager.shared.clearScanState()
                 await MainActor.run {
                     self.isScanning = false
                     self.finishedPublisher.send()
