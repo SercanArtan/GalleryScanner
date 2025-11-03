@@ -4,6 +4,7 @@ import Photos
 
 class HomeViewModel: ObservableObject {
     @Published var groupCounts: [String : Int] = [:]
+    @Published var groupOrder: [String] = []
     @Published var progress: Float = 0
     @Published var statusText = "Waiting for permission"
     
@@ -19,7 +20,9 @@ class HomeViewModel: ObservableObject {
             DispatchQueue.main.async {
                 if status == .authorized || status == .limited {
                     self.statusText = "Authorized - Starting scan ..."
-                    PhotoScanner.shared.resumeOrStartScan()
+                    Task{
+                        await PhotoScanner.shared.resumeOrStartScan()
+                    }
                 } else {
                     self.statusText = "Photo access denied"
                     self.showDeniedAlert()
@@ -36,6 +39,11 @@ class HomeViewModel: ObservableObject {
                 self.progress = total == 0 ? 0 : Float(processed) / Float(total)
                 self.statusText = "Processed \((self.progress * 100).rounded(.down)) % photos"
                 self.groupCounts = PhotoScanner.shared.groupedScanned()
+                
+                let newKeys = Array(self.groupCounts.keys)
+                for key in newKeys where !self.groupOrder.contains(key) {
+                    self.groupOrder.append(key)
+                }
             }
             .store(in: &cancellables)
         

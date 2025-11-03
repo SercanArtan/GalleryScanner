@@ -4,7 +4,7 @@ import Photos
 import Combine
 
 class HomeViewController: UIViewController {
-    private var homeVM = HomeViewModel()
+    private var homeVM : HomeViewModel
     private var collectionView: UICollectionView!
     private var dataSource: UICollectionViewDiffableDataSource<Int, String>!
     private var cancellables = Set<AnyCancellable>()
@@ -12,6 +12,14 @@ class HomeViewController: UIViewController {
     private let statusLabel = UILabel()
     private let progressView = UIProgressView(progressViewStyle: .default)
     
+    init(viewModel: HomeViewModel){
+        self.homeVM = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -87,13 +95,14 @@ extension HomeViewController {
     }
     
     private func updateGroupUI() {
-        var visible = homeVM.groupCounts.filter { $0.value > 0 }.map { $0.key }
-        visible.sort()
-        
+        let visible = homeVM.groupOrder
         var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
         snapshot.appendSections([0])
         snapshot.appendItems(visible, toSection: 0)
-        dataSource.applySnapshotUsingReloadData(snapshot)
+        if #available(iOS 15.0, *) {
+            snapshot.reconfigureItems(visible)
+        }
+        dataSource.apply(snapshot,animatingDifferences: false)
     }
 }
 
@@ -138,12 +147,9 @@ extension HomeViewController: UICollectionViewDelegate {
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard let id = dataSource.itemIdentifier(for: indexPath) else { return }
-        
-        let viewModel = GroupDetailViewModel(groupRaw: id)
-        let view = GroupDetailView(viewModel: viewModel)
+        let view = GroupDetailView(groupRaw: id)
         let host = UIHostingController(rootView: view )
         navigationController?.pushViewController(host, animated: true)
     }
 }
-
 
